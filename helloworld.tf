@@ -37,3 +37,20 @@ resource "aws_internet_gateway" "gw_brq" {
     Name = "Sortudo"
   }
 }
+resource "aws_route_table" "example" {
+  vpc_id = aws_vpc.vpc_brq.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.gw_brq.id
+  }
+
+  route {
+    ipv6_cidr_block        = "::/0"
+    gateway_id = aws_internet_gateway.gw_brq.id
+  }
+
+  tags = {
+    Name = "Testeteste123"
+  }
+}

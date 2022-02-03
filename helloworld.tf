@@ -25,11 +25,14 @@ resource "aws_vpc" "vpc_brq" {
 resource "aws_subnet" "subrede_brq" {
   vpc_id     = aws_vpc.vpc_brq.id
   cidr_block = "10.0.1.0/24"
-
-  tags = {
-    Name = "subrede_testebrq"
+  availability_zone = "us-east-1a"
+  tags ={
+    Name= "RonyRustico"
   }
-}
+
+ 
+  }
+
 resource "aws_internet_gateway" "gw_brq" {
   vpc_id = aws_vpc.vpc_brq.id
 
@@ -54,10 +57,10 @@ resource "aws_route_table" "example" {
     Name = "Testeteste123"
   }
 }
-#resource "aws_route_table_association" "associacao" {
- # subnet_id      =  aws_subnet.subrede_brq.id
-  #route_table_id = example.rotas_brq.id
-#}
+resource "aws_route_table_association" "associacao" {
+  subnet_id      =  aws_subnet.subrede_brq.id
+  route_table_id = aws_route_table.example.id
+}
 resource "aws_security_group" "firewall" {
   name        = "abrir portas"
   description = "Abrir porta 22(SSH, 443(HTTPS))e 80HTTP"
@@ -99,11 +102,37 @@ resource "aws_security_group" "firewall" {
     Name = "Coisinha"
   }
 }
-resource "aws_network_interface" "test" {
+resource "aws_network_interface" "interface_rede" {
   subnet_id       = aws_subnet.subrede_brq.id
-  private_ips     = ["10.0.1.50"]
+  private_ips     = ["10.0.1.51"]
   security_groups = [aws_security_group.firewall.id]
   tags ={
     Name= "Everton"
   }
+}
+resource "aws_eip" "ip_publico" {
+ vpc                       = true
+ network_interface         = aws_network_interface.interface_rede.id
+ associate_with_private_ip = "10.0.1.51"
+ depends_on                = [aws_internet_gateway.gw_brq]
+}
+resource "aws_instance" "hello-world" {
+ ami               = "ami-04505e74c0741db8d"
+ instance_type     = "t2.micro"
+ availability_zone = "us-east-1a"
+  network_interface {
+   device_index         = 0
+   network_interface_id = aws_network_interface.interface_rede.id
+ }
+ user_data = <<-EOF
+               #! /bin/bash
+               sudo apt-get update -y
+               sudo apt-get install -y apache2
+               sudo systemctl start apache2
+               sudo systemctl enable apache2
+               sudo bash -c 'echo "<h1>ESTOU RODANDO</h1>"  > /var/www/html/index.html'
+             EOF
+             tags = {
+               "Name" = "Janine"
+             }
 }
